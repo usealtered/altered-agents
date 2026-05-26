@@ -1,9 +1,12 @@
+import { loadAgentEnvironment } from "@altered/core-experimental/config/load-env"
 import { resolveApiOrigin } from "@altered/core-experimental/config/routing"
 import { styleTerminalText } from "@altered/core-experimental/misc/style-terminal-text"
 import { Hono } from "hono"
 import { logger } from "hono/logger"
 import { customLogger } from "./misc/custom-logger"
 import { router } from "./routers"
+
+loadAgentEnvironment()
 
 class ALTEREDAPI extends Hono {
     constructor() {

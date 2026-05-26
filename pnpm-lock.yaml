@@ -124,6 +124,9 @@ importers:
       arktype:
         specifier: 'catalog:'
         version: 2.2.0
+      dotenv:
+        specifier: 'catalog:'
+        version: 16.6.1
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -151,7 +154,7 @@ importers:
         version: 4.27.0
       chat-adapter-sendblue:
         specifier: 'catalog:'
-        version: https://codeload.github.com/inducingchaos/chat-adapter-sendblue/tar.gz/a36a6ebdce5c700cbe5159e3bf4b3a93bae55c63(chat@4.27.0)
+        version: https://codeload.github.com/inducingchaos/chat-adapter-sendblue/tar.gz/dc9e9a95887dfb478c2941dd23b4aadf106a0d7b(chat@4.27.0)
       drizzle-orm:
         specifier: 'catalog:'
         version: 1.0.0-beta.22(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/mssql@9.1.11(@azure/core-client@1.10.1))(@types/pg@8.20.0)(arktype@2.2.0)(mssql@11.0.1(@azure/core-client@1.10.1))(pg@8.20.0)(zod@4.3.6)
@@ -856,8 +859,8 @@ packages:
   character-entities@2.0.2:
     resolution: {integrity: sha512-shx7oQ0Awen/BRIdkjkvz54PnEEI/EjwXDSIZp86/KKdbafHh1Df/RYGBhn4hbe2+uKC9FnT5UCEdyPz3ai9hQ==}
 
-  chat-adapter-sendblue@https://codeload.github.com/inducingchaos/chat-adapter-sendblue/tar.gz/a36a6ebdce5c700cbe5159e3bf4b3a93bae55c63:
-    resolution: {tarball: https://codeload.github.com/inducingchaos/chat-adapter-sendblue/tar.gz/a36a6ebdce5c700cbe5159e3bf4b3a93bae55c63}
+  chat-adapter-sendblue@https://codeload.github.com/inducingchaos/chat-adapter-sendblue/tar.gz/dc9e9a95887dfb478c2941dd23b4aadf106a0d7b:
+    resolution: {tarball: https://codeload.github.com/inducingchaos/chat-adapter-sendblue/tar.gz/dc9e9a95887dfb478c2941dd23b4aadf106a0d7b}
     version: 0.2.0
     peerDependencies:
       chat: '>=4.0.0'
@@ -2170,7 +2173,7 @@ snapshots:
 
   character-entities@2.0.2: {}
 
-  chat-adapter-sendblue@https://codeload.github.com/inducingchaos/chat-adapter-sendblue/tar.gz/a36a6ebdce5c700cbe5159e3bf4b3a93bae55c63(chat@4.27.0):
+  chat-adapter-sendblue@https://codeload.github.com/inducingchaos/chat-adapter-sendblue/tar.gz/dc9e9a95887dfb478c2941dd23b4aadf106a0d7b(chat@4.27.0):
     dependencies:
       chat: 4.27.0
       sendblue: 3.9.0

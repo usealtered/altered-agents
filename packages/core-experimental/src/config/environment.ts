@@ -1,4 +1,5 @@
 import { type } from "arktype"
+import { loadAgentEnvironment } from "./load-env"
 
 //  TODO P0: Convert to Effect Config.
 
@@ -43,6 +44,8 @@ type EnvironmentConfig = typeof environmentConfigSchema.infer
 let environmentConfig: EnvironmentConfig | undefined
 
 function getEnvironmentConfig(): EnvironmentConfig {
+    loadAgentEnvironment()
+
     environmentConfig ??= environmentConfigSchema.assert({
         shared: {
             config: {

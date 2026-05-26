@@ -1,11 +1,14 @@
 import { dirname, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 import { getEnvironmentConfig } from "@altered/core-experimental/config/environment"
+import { loadAgentEnvironment } from "@altered/core-experimental/config/load-env"
 import { config } from "dotenv"
 import { defineConfig } from "drizzle-kit"
 
+loadAgentEnvironment()
+
 config({
-    path: resolve(dirname(fileURLToPath(import.meta.url)), "../../.env")
+    path: resolve(dirname(fileURLToPath(import.meta.url)), "../../.env.agents")
 })
 
 const {

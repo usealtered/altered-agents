@@ -4,10 +4,12 @@
     "private": true,
 
     "scripts": {
-        "tunnel": "pnpm dlx dotenv-cli -- sh -c 'exec pnpm dlx ngrok http \"$API_CONFIG_PORT\" --url \"$SHARED_PROVIDER_NGROK_URL\" --authtoken \"$SHARED_PROVIDER_NGROK_SECRET\"'",
+        "tunnel": "pnpm dlx dotenv-cli -e .env.agents -- sh -c 'exec pnpm dlx ngrok http \"$API_CONFIG_PORT\" --url \"$SHARED_PROVIDER_NGROK_URL\" --authtoken \"$SHARED_PROVIDER_NGROK_SECRET\"'",
 
         "dev": "turbo dev --filter=!*pre-release --filter=!*experimental --filter=!*internal*",
         "dev:experimental": "turbo dev --filter=*experimental",
+        "agents:sync": "node ./scripts/agents/sync-main.mjs",
+        "agents:preflight": "node ./scripts/agents/preflight.mjs",
 
         "check:types": "turbo check:types",
         "check:style": "ultracite check",

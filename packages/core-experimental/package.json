@@ -16,6 +16,7 @@
         "typescript": "catalog:"
     },
     "dependencies": {
-        "arktype": "catalog:"
+        "arktype": "catalog:",
+        "dotenv": "catalog:"
     }
 }

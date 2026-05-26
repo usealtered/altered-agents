@@ -1,0 +1,33 @@
+#!/usr/bin/env node
+
+import { execSync } from "node:child_process"
+
+function run(command) {
+    return execSync(command, { encoding: "utf8", stdio: "pipe" }).trim()
+}
+
+function runStreaming(command) {
+    execSync(command, { stdio: "inherit" })
+}
+
+function assertAgentBranch(branchName) {
+    if (branchName.startsWith("agents/")) return
+
+    throw new Error(
+        `Refusing to sync from non-agent branch: ${branchName}. Switch to agents/main first.`
+    )
+}
+
+function main() {
+    const branch = run("git branch --show-current")
+    assertAgentBranch(branch)
+
+    console.log(`Syncing branch: ${branch}`)
+
+    runStreaming("git fetch origin main")
+    runStreaming("git rebase origin/main")
+
+    console.log("Sync complete.")
+}
+
+main()
