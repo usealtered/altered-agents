@@ -8,7 +8,7 @@ type AddRunnerExecutionInput = {
 }
 
 type AddRunnerExecutionResult = {
-    status: "completed" | "blocked" | "failed"
+    status: "running" | "completed" | "blocked" | "failed"
     notes: string[]
     metadata?: Record<string, unknown>
 }

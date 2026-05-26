@@ -2,31 +2,39 @@
 
 ## Purpose
 
-This document defines the exact HTTP contract between:
+This document defines the exact contract between:
 
 - ADD control plane in this repo.
-- External runner that executes jobs on `agents/*`.
+- Trigger.dev task execution for jobs on `agents/*`.
 
-## Outbound request (control plane -> runner)
+## Outbound request (control plane -> Trigger.dev API)
 
-- URL: `ADD_CURSOR_RUNNER_WEBHOOK_URL`
+- URL: `https://api.trigger.dev/api/v1/tasks/{ADD_TRIGGER_TASK_ID}/trigger` (or `ADD_TRIGGER_API_BASE_URL`)
 - Method: `POST`
 - Headers:
   - `content-type: application/json`
-  - `authorization: Bearer <ADD_CURSOR_RUNNER_TOKEN>` (optional if configured)
+  - `authorization: Bearer <TRIGGER_SECRET_KEY or ADD_TRIGGER_SECRET_KEY>`
 
 ### Body
 
 ```json
 {
-  "jobId": "string",
-  "planId": "string",
-  "request": "string",
-  "summaryBullets": ["string"],
-  "detailBullets": ["string"],
-  "branchName": "agents/job-xxxx",
-  "repository": "usealtered/altered",
-  "syncFrom": "main"
+  "payload": {
+    "jobId": "string",
+    "planId": "string",
+    "request": "string",
+    "summaryBullets": ["string"],
+    "detailBullets": ["string"],
+    "branchName": "agents/job-xxxx",
+    "repository": "usealtered/altered",
+    "syncFrom": "main",
+    "callbackUrl": "https://agents.experimental.api.usealtered.com/webhooks/add-runner",
+    "callbackSecret": "ADD_RUNNER_CALLBACK_SECRET"
+  },
+  "options": {
+    "idempotencyKey": "add-job-<jobId>",
+    "tags": ["add", "agents"]
+  }
 }
 ```
 
@@ -37,7 +45,7 @@ This document defines the exact HTTP contract between:
 - Must avoid touching repositories/resources outside configured allowlist.
 - Should include usage/cost metadata in callback when available.
 
-## Callback request (runner -> control plane)
+## Callback request (Trigger task -> control plane)
 
 - URL path in API app: `/webhooks/add-runner`
 - Method: `POST`
@@ -72,9 +80,10 @@ This document defines the exact HTTP contract between:
 
 - `ADD_TARGET_GITHUB_REPOSITORY`
 - `ADD_ALLOWED_GITHUB_REPOSITORY`
-- `ADD_ALLOWED_DOMAIN_SUFFIXES`
-- `ADD_CURSOR_RUNNER_WEBHOOK_URL`
-- `ADD_CURSOR_RUNNER_TOKEN`
+- `ADD_TRIGGER_TASK_ID`
+- `ADD_TRIGGER_API_BASE_URL` (optional)
+- `TRIGGER_SECRET_KEY` (or `ADD_TRIGGER_SECRET_KEY`)
+- `ADD_RUNNER_CALLBACK_URL`
 - `ADD_RUNNER_CALLBACK_SECRET`
 - `ADD_USE_LOCAL_TEST_RUNNER`
 
@@ -82,5 +91,4 @@ This document defines the exact HTTP contract between:
 
 - Job target branch must start with `agents/`.
 - Repository must match allowlisted repository.
-- Runner URL domain must match allowed suffix list when configured.
 - Callback without valid bearer secret is rejected.

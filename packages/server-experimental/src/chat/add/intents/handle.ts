@@ -276,13 +276,15 @@ function handleHealthIntent(): string {
     const mode =
         process.env.ADD_USE_LOCAL_TEST_RUNNER === "1"
             ? "local-test"
-            : "remote-webhook"
+            : "trigger-dev"
 
     return [
         "ADD health:",
         `- runner mode: ${mode}`,
         `- target repo: ${process.env.ADD_TARGET_GITHUB_REPOSITORY ?? "unset"}`,
-        `- runner webhook configured: ${process.env.ADD_CURSOR_RUNNER_WEBHOOK_URL ? "yes" : "no"}`,
+        `- trigger task id configured: ${process.env.ADD_TRIGGER_TASK_ID ? "yes" : "no"}`,
+        `- trigger key configured: ${process.env.TRIGGER_SECRET_KEY || process.env.ADD_TRIGGER_SECRET_KEY ? "yes" : "no"}`,
+        `- callback URL configured: ${process.env.ADD_RUNNER_CALLBACK_URL ? "yes" : "no"}`,
         `- callback secret configured: ${process.env.ADD_RUNNER_CALLBACK_SECRET ? "yes" : "no"}`
     ].join("\n")
 }

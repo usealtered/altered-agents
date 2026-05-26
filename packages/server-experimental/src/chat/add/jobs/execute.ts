@@ -1,6 +1,6 @@
 import { getAddPlanById } from "../plans/get"
-import { cursorWebhookRunner } from "../runner/cursor-webhook"
 import { isLocalRunnerEnabled, localTestRunner } from "../runner/local-test"
+import { triggerClientRunner } from "../runner/trigger-client"
 import { getAddJobById } from "./get"
 import { updateAddJobStatus } from "./update"
 
@@ -21,7 +21,7 @@ async function executeAddJob(jobId: string): Promise<void> {
 
     const activeRunner = isLocalRunnerEnabled()
         ? localTestRunner
-        : cursorWebhookRunner
+        : triggerClientRunner
 
     const result = await activeRunner.execute({
         jobId: job.id,
@@ -41,6 +41,19 @@ async function executeAddJob(jobId: string): Promise<void> {
                 notes: result.notes
             },
             completedAt: new Date()
+        })
+
+        return
+    }
+
+    if (result.status === "running") {
+        await updateAddJobStatus({
+            id: jobId,
+            status: "running",
+            metadata: {
+                ...(result.metadata ?? {}),
+                notes: result.notes
+            }
         })
 
         return

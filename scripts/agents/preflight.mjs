@@ -21,6 +21,12 @@ const REQUIRED_ENV_KEYS = [
     "ADD_TARGET_GITHUB_REPOSITORY"
 ]
 
+const REQUIRED_LIVE_RUNNER_KEYS = [
+    "ADD_TRIGGER_TASK_ID",
+    "ADD_RUNNER_CALLBACK_URL",
+    "ADD_RUNNER_CALLBACK_SECRET"
+]
+
 function run(command) {
     return execSync(command, { encoding: "utf8", stdio: "pipe" }).trim()
 }
@@ -79,6 +85,25 @@ function checkRequiredEnvKeys() {
         const value = envMap.get(key)
         if (!value) fail(`Missing required key in .env.agents: ${key}`)
     }
+
+    const localRunnerEnabled = envMap.get("ADD_USE_LOCAL_TEST_RUNNER") === "1"
+    if (localRunnerEnabled) return
+
+    for (const key of REQUIRED_LIVE_RUNNER_KEYS) {
+        const value = envMap.get(key)
+        if (!value)
+            fail(
+                `Missing required live-runner key in .env.agents: ${key} (or set ADD_USE_LOCAL_TEST_RUNNER=1).`
+            )
+    }
+
+    const triggerSecret = envMap.get("TRIGGER_SECRET_KEY")
+    const addTriggerSecret = envMap.get("ADD_TRIGGER_SECRET_KEY")
+
+    if (!triggerSecret && !addTriggerSecret)
+        fail(
+            "Missing trigger secret key. Set TRIGGER_SECRET_KEY or ADD_TRIGGER_SECRET_KEY in .env.agents."
+        )
 }
 
 function main() {
