@@ -2,10 +2,11 @@ import { getDatabase } from "../../../storage/database/connection"
 import { addJobs } from "./schema"
 
 function assertAgentBranchName(branchName: string) {
-    if (!branchName.startsWith("agents/"))
-        throw new Error(
-            `ADD jobs can only target branches under agents/* (received: ${branchName}).`
-        )
+    if (branchName === "main" || branchName.startsWith("job-")) return
+
+    throw new Error(
+        `ADD jobs can only target main or job-* branches (received: ${branchName}).`
+    )
 }
 
 async function createAddJob(values: {

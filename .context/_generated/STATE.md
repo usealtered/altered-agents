@@ -1,6 +1,15 @@
 # PLAN STATE (Generated)
 
-Last updated: 2026-05-07
+Last updated: 2026-05-27
+
+## ADD deployment memory
+
+- Agent deployment project (Vercel): `api-experimental-agents` (under `altered` team).
+- Treat `api-experimental` (non-`-agents`) as out-of-scope for ADD runtime operations.
+- Agent runtime origin (`API_ORIGIN_PRODUCTION`): `https://agents.experimental.api.usealtered.com`.
+- ADD runner callback URL should use: `https://agents.experimental.api.usealtered.com/webhooks/add-runner`.
+- Trigger task id (`ADD_TRIGGER_TASK_ID`): `add-execute-job`.
+- Branch policy is now root-scoped only: `main` and `job-*`; legacy prefixed branch compatibility is removed.
 
 ## Focus
 

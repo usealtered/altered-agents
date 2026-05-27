@@ -60,7 +60,7 @@ function formatHelpMessage(): string {
 }
 
 function buildJobBranchName(jobId: string): string {
-    return `agents/job-${jobId.slice(0, 8)}`
+    return `job-${jobId.slice(0, 8)}`
 }
 
 function formatJobStatusMessage(input: {

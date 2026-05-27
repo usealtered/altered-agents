@@ -9,18 +9,17 @@
 
 ## Locked decisions (already chosen)
 
-- Branch naming: we are moving to `agents/*` (plural).
+- Branch naming: migrated to root-level ADD scope (`main` + `job-*`).
 - Rollout style: hybrid.
-  - Start now in the same repo using `agents/*`.
-  - Later, migrate to a separate agent repo when ready.
+  - Operate in the separate `altered-agents` repo directly.
 - Safety gate: each implementation job needs explicit approval before execution.
-- Core boundary rule: agent workflows can read human branches, but must never write to non-`agents/*` branches.
+- Core boundary rule: agent workflows can read human branches, but must never write outside `main` and `job-*`.
 
 ## Quick glossary (simple terms)
 
 - ADD mode: Agent Driven Development mode.
 - Human branch: your normal branch flow (`main` + human feature branches).
-- Agent branch: any branch with `agents/` prefix.
+- Agent branch: `main` or any `job-*` branch.
 - Job: one requested unit of work, for example “add `/distill` command”.
 - Plan card: short bullet plan shown in iMessage before work starts.
 - Cursor runner: a remote/background worker that uses Cursor tooling/APIs to edit a git repo without needing your MacBook open.
@@ -66,9 +65,9 @@ flowchart TD
 
 ## Core rules (non-negotiable)
 
-- Never write to non-`agents/*` branches from ADD workflows.
-- Always rebase/sync `agents/main` from human `main` before new job execution.
-- Agent is allowed to override code on `agents/*` if needed after sync.
+- Never write outside `main` and `job-*` branches from ADD workflows.
+- Always rebase/sync active ADD branch from `main` before new job execution.
+- Agent is allowed to override code on `main` and `job-*` as needed.
 - Agent deployment must use separate resources:
   - separate iMessage number,
   - separate database (or strict DB branch),
@@ -87,7 +86,7 @@ flowchart TD
   - do not rename normal app concepts just to add “agent” labels,
   - keep existing variable names like Sendblue config names,
   - separate behavior by deployment environment and credentials, not by rewriting core naming in code.
-- Local env loading rule for `agents/*`:
+- Local env loading rule for ADD workflows:
   - always load from `.env.agents` explicitly,
   - never rely on implicit `.env` inference in agent workflows,
   - delay env-dependent runtime tests until agent env values are provided.
@@ -100,23 +99,23 @@ Create hard branch rules so agent automation cannot leak into human code.
 
 ### Deliverables
 
-- Canonicalize naming from `agent/*` to `agents/*`.
-  - Perform direct rename/move now since current `agent/main` has no meaningful runtime footprint.
-  - Use a clean cutoff with no long compatibility window.
+- Canonicalize ADD branch scope to root-level:
+  - Use `main` for cohesive updates.
+  - Use `job-*` for isolated ADD execution branches.
 - Branch sync contract:
   - Before starting a job, runner fetches human `main`.
-  - Runner rebases `agents/main` onto human `main`.
+  - Runner rebases current ADD branch onto `main`.
   - If conflict happens, runner auto-resolves using current feature direction when safe.
   - Runner only pauses for conflicts that require conceptual product-direction decisions.
 - Job branch pattern:
-  - Create `agents/job-<id>-<slug>`.
+  - Create `job-<id>-<slug>`.
   - Run work there.
-  - Merge back to `agents/main` only when checks pass.
+  - Merge back to `main` only when checks pass.
 - Write guards:
-  - Add guard checks in runner logic that reject write targets outside `agents/*`.
+  - Add guard checks in runner logic that reject write targets outside `main` and `job-*`.
   - Add preflight validation that current branch matches allowed prefix.
 - Remote alignment:
-  - Move git remote to `git@github.com:usealtered/altered.git`.
+  - Use git remote `git@github.com:usealtered/altered-agents.git`.
   - Store this as expected upstream in bootstrap validation.
 
 ### Success criteria
@@ -206,7 +205,7 @@ Turn iMessage into a short, controlled planning + execution entrypoint.
 
 ### Goal
 
-Convert approved iMessage plans into actual code changes in `agents/*`.
+Convert approved iMessage plans into actual code changes in `main`/`job-*`.
 
 ### Runner responsibilities
 
@@ -217,7 +216,7 @@ Convert approved iMessage plans into actual code changes in `agents/*`.
   - check,
   - fix,
   - verify.
-- Commit and push only in `agents/*`.
+- Commit and push only in `main`/`job-*`.
 - Return structured run output:
   - files changed,
   - commits,
@@ -267,7 +266,7 @@ Keep agent app runtime fully separated from human app runtime.
 
 ### Deployment behavior
 
-- Deploy from `agents/*` workflows only.
+- Deploy from `main`/`job-*` workflows only.
 - Include deployment metadata in job artifacts.
 - Do not depend on preview promotion flow for this project phase.
 
@@ -334,7 +333,7 @@ Track what costs money, what takes time, and what fails.
 
 ### Goal
 
-Prepare future move from same-repo `agents/*` to separate agent repo without rewriting the system.
+Keep root-branch ADD execution stable inside the separate agent repo.
 
 ### Requirements
 
@@ -365,7 +364,7 @@ You outlined two valid paths. We keep both, with clear default behavior.
 ### Default policy
 
 - Core platform and reusable building blocks:
-  - implement on `agents/*` in repo.
+  - implement on `main`/`job-*` in repo.
 - Highly specific user-land integrations:
   - prefer sandbox execution when it avoids polluting core code.
 
@@ -393,12 +392,12 @@ You outlined two valid paths. We keep both, with clear default behavior.
 ## End-to-end validation gates (ready for daily use)
 
 - Dry-run plan and approval from iMessage, no code changes.
-- One real approved feature run on `agents/*`.
+- One real approved feature run on `main`/`job-*`.
 - Branch sync check proves rebase happened before run.
 - Deployment succeeds to agent environment and returns URL.
 - Observability outputs include cost, duration, and status.
 - Forced failure test shows clean error reporting and safe stop behavior.
-- Safety test confirms no writes to non-`agents/*` and no human resource writes.
+- Safety test confirms no writes outside `main`/`job-*` and no human resource writes.
 
 ## Human tasks needed during implementation
 
@@ -421,5 +420,5 @@ You outlined two valid paths. We keep both, with clear default behavior.
 - You can text a short request from iMessage.
 - You receive a concise plan.
 - You approve.
-- The system builds the feature on `agents/*`, deploys it to agent resources, and reports cost + status.
+- The system builds the feature on `main`/`job-*`, deploys it to agent resources, and reports cost + status.
 - You keep human code clean and protected while still getting faster feature access.

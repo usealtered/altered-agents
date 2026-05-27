@@ -11,10 +11,10 @@ function runStreaming(command) {
 }
 
 function assertAgentBranch(branchName) {
-    if (branchName.startsWith("agents/")) return
+    if (branchName === "main" || branchName.startsWith("job-")) return
 
     throw new Error(
-        `Refusing to sync from non-agent branch: ${branchName}. Switch to agents/main first.`
+        `Refusing to sync from out-of-scope branch: ${branchName}. Switch to main or job-* first.`
     )
 }
 

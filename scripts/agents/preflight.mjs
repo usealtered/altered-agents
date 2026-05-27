@@ -45,15 +45,19 @@ function checkRequiredFiles() {
 
 function checkBranchScope() {
     const branch = run("git branch --show-current")
-    if (!branch.startsWith("agents/"))
-        fail(`Current branch is outside agents/* scope: ${branch}`)
+    const inAllowedScope = branch === "main" || branch.startsWith("job-")
+
+    if (!inAllowedScope)
+        fail(
+            `Current branch is outside ADD scope: ${branch}. Allowed: main or job-* only.`
+        )
 }
 
 function checkRemote() {
     const remote = run("git remote get-url origin")
-    if (!remote.includes("usealtered/altered"))
+    if (!remote.includes("usealtered/altered-agents"))
         fail(
-            `Origin remote is not set to usealtered/altered (current: ${remote})`
+            `Origin remote is not set to usealtered/altered-agents (current: ${remote})`
         )
 }
 

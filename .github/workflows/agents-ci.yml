@@ -3,10 +3,12 @@ name: agents-ci
 on:
     push:
         branches:
-            - "agents/**"
+            - "main"
+            - "job-*"
     pull_request:
         branches:
-            - "agents/**"
+            - "main"
+            - "job-*"
 
 jobs:
     check:

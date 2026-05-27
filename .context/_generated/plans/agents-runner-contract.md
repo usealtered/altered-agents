@@ -5,7 +5,7 @@
 This document defines the exact contract between:
 
 - ADD control plane in this repo.
-- Trigger.dev task execution for jobs on `agents/*`.
+- Trigger.dev task execution for jobs on `main` and `job-*`.
 
 ## Outbound request (control plane -> Trigger.dev API)
 
@@ -25,8 +25,8 @@ This document defines the exact contract between:
     "request": "string",
     "summaryBullets": ["string"],
     "detailBullets": ["string"],
-    "branchName": "agents/job-xxxx",
-    "repository": "usealtered/altered",
+    "branchName": "job-xxxx",
+    "repository": "usealtered/altered-agents",
     "syncFrom": "main",
     "callbackUrl": "https://agents.experimental.api.usealtered.com/webhooks/add-runner",
     "callbackSecret": "ADD_RUNNER_CALLBACK_SECRET"
@@ -40,7 +40,7 @@ This document defines the exact contract between:
 
 ### Required behavior
 
-- Must only write to `agents/*` branches.
+- Must only write to `main` or `job-*` branches.
 - Must sync from human `main` before implementation.
 - Must avoid touching repositories/resources outside configured allowlist.
 - Should include usage/cost metadata in callback when available.
@@ -89,6 +89,6 @@ This document defines the exact contract between:
 
 ## Safety invariants
 
-- Job target branch must start with `agents/`.
+- Job target branch must be `main` or start with `job-`.
 - Repository must match allowlisted repository.
 - Callback without valid bearer secret is rejected.

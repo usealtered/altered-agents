@@ -1,6 +1,6 @@
 type ScopeCheckResult = { ok: true } | { ok: false; reason: string }
 
-const DEFAULT_ALLOWED_REPOSITORY = "usealtered/altered"
+const DEFAULT_ALLOWED_REPOSITORY = "usealtered/altered-agents"
 
 function getConfiguredAllowedRepository(): string {
     return (
@@ -21,11 +21,12 @@ function ensureAllowedRepository(repository: string): ScopeCheckResult {
 }
 
 function ensureAllowedBranch(branchName: string): ScopeCheckResult {
-    if (branchName.startsWith("agents/")) return { ok: true }
+    if (branchName === "main" || branchName.startsWith("job-"))
+        return { ok: true }
 
     return {
         ok: false,
-        reason: `Branch outside allowed scope: ${branchName}.`
+        reason: `Branch outside allowed scope: ${branchName}. Allowed: main or job-* only.`
     }
 }
 
