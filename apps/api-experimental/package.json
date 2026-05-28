@@ -10,14 +10,16 @@
 
         "clean": "git clean -xdf .cache .turbo dist node_modules",
 
-        "build": "tsc --noEmit false",
+        "build": "node ./scripts/bundle-application.mjs",
 
         "start": "node dist/index.js"
     },
     "dependencies": {
-        "@altered/api-experimental": "workspace:*"
+        "@altered/api-experimental": "workspace:*",
+        "hono": "catalog:"
     },
     "devDependencies": {
+        "esbuild": "catalog:",
         "@types/node": "catalog:",
         "tsx": "catalog:",
         "typescript": "catalog:"

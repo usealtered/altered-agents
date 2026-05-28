@@ -5,15 +5,28 @@
     "tasks": {
         "build": {
             "env": [
+                "SHARED_CONFIG_ENV",
+                "SHARED_ADMIN_PHONE_NUMBER",
+                "SHARED_STORAGE_DATABASE_URL",
                 "SHARED_STORAGE_KV_URL",
-
+                "SHARED_PROVIDER_OPENROUTER_SECRET",
                 "SHARED_PROVIDER_SENDBLUE_PUBLIC",
                 "SHARED_PROVIDER_SENDBLUE_SECRET",
                 "SHARED_PROVIDER_SENDBLUE_SIGNING",
                 "SHARED_PROVIDER_SENDBLUE_NUMBER",
                 "SHARED_PROVIDER_NGROK_URL",
-
-                "API_CONFIG_PORT"
+                "SHARED_PROVIDER_NGROK_SECRET",
+                "API_CONFIG_PORT",
+                "API_ORIGIN_PRODUCTION",
+                "ADD_TARGET_GITHUB_REPOSITORY",
+                "ADD_ALLOWED_GITHUB_REPOSITORY",
+                "ADD_ALLOWED_DOMAIN_SUFFIXES",
+                "ADD_RUNNER_CALLBACK_SECRET",
+                "ADD_USE_LOCAL_TEST_RUNNER",
+                "ADD_TRIGGER_TASK_ID",
+                "TRIGGER_SECRET_KEY",
+                "ADD_RUNNER_CALLBACK_URL",
+                "ADD_TRIGGER_API_BASE_URL"
             ]
         }
     }
