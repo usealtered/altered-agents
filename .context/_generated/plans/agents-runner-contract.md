@@ -29,7 +29,11 @@ This document defines the exact contract between:
     "repository": "usealtered/altered-agents",
     "syncFrom": "main",
     "callbackUrl": "https://agents.experimental.api.usealtered.com/webhooks/add-runner",
-    "callbackSecret": "ADD_RUNNER_CALLBACK_SECRET"
+    "callbackSecret": "ADD_RUNNER_CALLBACK_SECRET",
+    "executionMode": "noop | repo-write | cursor-cloud",
+    "githubToken": "string optional",
+    "cursorApiKey": "string optional",
+    "cursorModel": "string optional"
   },
   "options": {
     "idempotencyKey": "add-job-<jobId>",
@@ -86,6 +90,10 @@ This document defines the exact contract between:
 - `ADD_RUNNER_CALLBACK_URL`
 - `ADD_RUNNER_CALLBACK_SECRET`
 - `ADD_USE_LOCAL_TEST_RUNNER`
+- `ADD_RUNNER_BACKEND` (`cursor-direct` default, `trigger` fallback)
+- `ADD_CURSOR_API_KEY` (or `CURSOR_API_KEY`) for `cursor-cloud`
+- `ADD_CURSOR_MODEL` (optional; defaults to `composer-2.5`)
+- `ADD_CURSOR_API_BASE_URL` (optional; defaults to `https://api.cursor.com`)
 
 ## Safety invariants
 

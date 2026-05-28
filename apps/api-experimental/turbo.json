@@ -23,8 +23,15 @@
                 "ADD_ALLOWED_DOMAIN_SUFFIXES",
                 "ADD_RUNNER_CALLBACK_SECRET",
                 "ADD_USE_LOCAL_TEST_RUNNER",
+                "ADD_RUNNER_BACKEND",
                 "ADD_TRIGGER_TASK_ID",
                 "TRIGGER_SECRET_KEY",
+                "ADD_TRIGGER_EXECUTION_MODE",
+                "ADD_RUNNER_GITHUB_TOKEN",
+                "ADD_CURSOR_API_KEY",
+                "CURSOR_API_KEY",
+                "ADD_CURSOR_MODEL",
+                "ADD_CURSOR_RUN_TIMEOUT_MS",
                 "ADD_RUNNER_CALLBACK_URL",
                 "ADD_TRIGGER_API_BASE_URL"
             ]

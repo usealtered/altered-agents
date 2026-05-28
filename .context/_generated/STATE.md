@@ -1,6 +1,6 @@
 # PLAN STATE (Generated)
 
-Last updated: 2026-05-27
+Last updated: 2026-05-28
 
 ## ADD deployment memory
 
@@ -10,6 +10,16 @@ Last updated: 2026-05-27
 - ADD runner callback URL should use: `https://agents.experimental.api.usealtered.com/webhooks/add-runner`.
 - Trigger task id (`ADD_TRIGGER_TASK_ID`): `add-execute-job`.
 - Branch policy is now root-scoped only: `main` and `job-*`; legacy prefixed branch compatibility is removed.
+- Latest production deployment: `https://api-experimental-agents-i6zvvo1ev-altered.vercel.app` (aliased to `https://api-experimental-agents.vercel.app`).
+- Latest production deployment: `https://api-experimental-agents-6i8vyukxj-altered.vercel.app` (aliased to `https://api-experimental-agents.vercel.app`).
+- Latest production deployment: `https://api-experimental-agents-a1oayhk7j-altered.vercel.app` (aliased to `https://api-experimental-agents.vercel.app`).
+- Runner E2E verification (`scripts/agents/test-trigger-run.ts`) succeeded in `repo-write` mode with a remote commit to `job-e2e-Hk8BSN2u` (`1cb867c020b4d7331235053291dcf5c163563a1e`).
+- Trigger task version `20260528.8` deployed with `cursor-cloud` mode support (Cursor Cloud agent handoff via API).
+- `cursor-cloud` E2E path currently blocks without `ADD_CURSOR_API_KEY`/`CURSOR_API_KEY`; block behavior is now explicit and surfaced in job metadata.
+- ADD execution no longer relies on long-lived serverless polling in the API path by default:
+  - default backend now uses direct Cursor run creation and immediate return to `running`,
+  - terminal completion is reconciled via Cursor API status checks (on-demand + opportunistic thread checks),
+  - Trigger remains available as a fallback backend.
 
 ## Focus
 

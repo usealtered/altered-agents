@@ -20,6 +20,8 @@ type AddExecutePayload = {
     callbackSecret: string
     executionMode?: string
     githubToken?: string
+    cursorApiKey?: string
+    cursorModel?: string
 }
 
 type GitHubRefResponse = {
@@ -31,6 +33,30 @@ type GitHubRefResponse = {
 type GitHubCreateContentsResponse = {
     commit?: {
         sha?: string
+    }
+}
+
+type CursorCreateAgentResponse = {
+    agent?: {
+        id?: string
+        url?: string
+    }
+    run?: {
+        id?: string
+    }
+}
+
+type CursorRunResponse = {
+    id?: string
+    status?: string
+    result?: string
+    durationMs?: number
+    git?: {
+        branches?: Array<{
+            repoUrl?: string
+            branch?: string
+            prUrl?: string
+        }>
     }
 }
 
@@ -54,8 +80,29 @@ function getGitHubApiBaseUrl(): string {
     return "https://api.github.com"
 }
 
+function getCursorApiBaseUrl(): string {
+    return (
+        process.env.ADD_CURSOR_API_BASE_URL?.trim() || "https://api.cursor.com"
+    )
+}
+
+function getCursorApiKey(): string | undefined {
+    return (
+        process.env.ADD_CURSOR_API_KEY?.trim() ||
+        process.env.CURSOR_API_KEY?.trim()
+    )
+}
+
+function getCursorModel(): string {
+    return process.env.ADD_CURSOR_MODEL?.trim() || "composer-2.5"
+}
+
 function toBase64(value: string): string {
     return Buffer.from(value, "utf8").toString("base64")
+}
+
+function sleep(milliseconds: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, milliseconds))
 }
 
 function buildRunArtifactPath(jobId: string): string {
@@ -88,6 +135,52 @@ function buildRunArtifactContent(payload: AddExecutePayload): string {
     ].join("\n")
 }
 
+function getCursorRunTimeoutMs(): number {
+    const raw = process.env.ADD_CURSOR_RUN_TIMEOUT_MS?.trim()
+    const parsed = raw ? Number.parseInt(raw, 10) : Number.NaN
+    if (!Number.isFinite(parsed) || parsed <= 0) return 240_000
+
+    return parsed
+}
+
+function buildRepositoryUrl(repository: string): string {
+    return `https://github.com/${repository}`
+}
+
+function buildCursorExecutionPrompt(payload: AddExecutePayload): string {
+    const summary = payload.summaryBullets
+        .map(bullet => `- ${bullet}`)
+        .join("\n")
+    const details = payload.detailBullets
+        .map(bullet => `- ${bullet}`)
+        .join("\n")
+
+    return [
+        "You are implementing one approved ALTERED ADD job.",
+        "",
+        `Job ID: ${payload.jobId}`,
+        `Plan ID: ${payload.planId}`,
+        `Target branch (must stay on this branch): ${payload.branchName}`,
+        "",
+        "Primary request:",
+        payload.request,
+        "",
+        "Summary bullets:",
+        summary || "- (none)",
+        "",
+        "Detail bullets:",
+        details || "- (none)",
+        "",
+        "Execution requirements:",
+        "- Implement the requested feature end-to-end in the current repository.",
+        "- Keep changes minimal, production-oriented, and aligned with existing architecture.",
+        "- Run pnpm check before finishing.",
+        "- Commit all relevant changes to the current branch with a concise message.",
+        "- Do not create or switch to other branches.",
+        "- Return a short final report with: what changed, checks run, and any remaining risks."
+    ].join("\n")
+}
+
 async function callGitHub<T>(input: {
     method: "GET" | "POST" | "PUT"
     path: string
@@ -100,6 +193,36 @@ async function callGitHub<T>(input: {
             authorization: `Bearer ${input.token}`,
             accept: "application/vnd.github+json",
             "x-github-api-version": "2022-11-28",
+            ...(input.body ? { "content-type": "application/json" } : {})
+        },
+        body: input.body ? JSON.stringify(input.body) : undefined
+    })
+
+    if (response.status === 204) return { status: response.status, json: null }
+
+    const text = await response.text()
+    if (!text) return { status: response.status, json: null }
+
+    try {
+        return { status: response.status, json: JSON.parse(text) as T }
+    } catch {
+        return { status: response.status, json: null }
+    }
+}
+
+async function callCursorApi<T>(input: {
+    method: "GET" | "POST"
+    path: string
+    apiKey: string
+    body?: Record<string, unknown>
+}): Promise<{ status: number; json: T | null }> {
+    const authToken = Buffer.from(`${input.apiKey}:`, "utf8").toString("base64")
+
+    const response = await fetch(`${getCursorApiBaseUrl()}${input.path}`, {
+        method: input.method,
+        headers: {
+            authorization: `Basic ${authToken}`,
+            accept: "application/json",
             ...(input.body ? { "content-type": "application/json" } : {})
         },
         body: input.body ? JSON.stringify(input.body) : undefined
@@ -205,6 +328,94 @@ async function commitRunArtifact(input: {
     return sha
 }
 
+async function createCursorCloudRun(input: {
+    payload: AddExecutePayload
+    cursorApiKey: string
+    cursorModel: string
+}): Promise<{ agentId: string; runId: string; agentUrl: string | null }> {
+    const response = await callCursorApi<CursorCreateAgentResponse>({
+        method: "POST",
+        apiKey: input.cursorApiKey,
+        path: "/v1/agents",
+        body: {
+            prompt: {
+                text: buildCursorExecutionPrompt(input.payload)
+            },
+            model: {
+                id: input.cursorModel
+            },
+            repos: [
+                {
+                    url: buildRepositoryUrl(input.payload.repository),
+                    startingRef: input.payload.branchName
+                }
+            ],
+            workOnCurrentBranch: true,
+            autoCreatePR: false,
+            skipReviewerRequest: true
+        }
+    })
+
+    if (response.status < 200 || response.status >= 300)
+        throw new Error(
+            `Failed to create Cursor agent run (${response.status}): ${JSON.stringify(response.json)}.`
+        )
+
+    const agentId = response.json?.agent?.id
+    const runId = response.json?.run?.id
+
+    if (!agentId || !runId)
+        throw new Error(
+            "Cursor create response was missing agent/run identifiers."
+        )
+
+    return {
+        agentId,
+        runId,
+        agentUrl: response.json?.agent?.url ?? null
+    }
+}
+
+function isCursorRunTerminal(status: string): boolean {
+    return (
+        status === "FINISHED" ||
+        status === "ERROR" ||
+        status === "CANCELLED" ||
+        status === "EXPIRED"
+    )
+}
+
+async function waitForCursorRun(input: {
+    agentId: string
+    runId: string
+    cursorApiKey: string
+}): Promise<CursorRunResponse> {
+    const startedAt = Date.now()
+    const timeoutMs = getCursorRunTimeoutMs()
+
+    while (Date.now() - startedAt < timeoutMs) {
+        const response = await callCursorApi<CursorRunResponse>({
+            method: "GET",
+            apiKey: input.cursorApiKey,
+            path: `/v1/agents/${encodeURIComponent(input.agentId)}/runs/${encodeURIComponent(input.runId)}`
+        })
+
+        if (response.status < 200 || response.status >= 300)
+            throw new Error(
+                `Failed to read Cursor run status (${response.status}): ${JSON.stringify(response.json)}.`
+            )
+
+        const run = response.json
+        const status = run?.status
+        if (run && typeof status === "string" && isCursorRunTerminal(status))
+            return run
+
+        await sleep(3000)
+    }
+
+    throw new Error(`Timed out waiting for Cursor run ${input.runId}.`)
+}
+
 async function sendRunnerCallback(
     payload: AddExecutePayload,
     input: {
@@ -231,6 +442,151 @@ async function sendRunnerCallback(
         throw new Error(
             `Runner callback failed with status ${response.status}: ${response.statusText}.`
         )
+}
+
+function getExecutionMode(payload: AddExecutePayload): string {
+    return (
+        payload.executionMode?.trim() ||
+        process.env.ADD_TRIGGER_EXECUTION_MODE?.trim() ||
+        "noop"
+    )
+}
+
+function isSupportedExecutionMode(mode: string): boolean {
+    return mode === "noop" || mode === "repo-write" || mode === "cursor-cloud"
+}
+
+async function executeRepoWriteMode(input: {
+    payload: AddExecutePayload
+    token: string
+    startedAt: number
+    executionMode: string
+}) {
+    const commitSha = await commitRunArtifact({
+        payload: input.payload,
+        token: input.token
+    })
+
+    await sendRunnerCallback(input.payload, {
+        status: "completed",
+        metadata: {
+            notes: [
+                "Runner committed ADD execution artifact to repository branch."
+            ],
+            commitSha,
+            durationMs: Date.now() - input.startedAt,
+            executionMode: input.executionMode
+        }
+    })
+
+    return { ok: true, commitSha }
+}
+
+async function executeCursorCloudMode(input: {
+    payload: AddExecutePayload
+    token: string
+    startedAt: number
+    executionMode: string
+}) {
+    const cursorApiKey = input.payload.cursorApiKey?.trim() || getCursorApiKey()
+    if (!cursorApiKey) {
+        await sendRunnerCallback(input.payload, {
+            status: "blocked",
+            errorMessage: "Missing ADD_CURSOR_API_KEY (or CURSOR_API_KEY).",
+            metadata: {
+                notes: ["Set Cursor API key for cursor-cloud execution mode."]
+            }
+        })
+
+        return { ok: false }
+    }
+
+    const cursorModel = input.payload.cursorModel?.trim() || getCursorModel()
+
+    const createdRun = await createCursorCloudRun({
+        payload: input.payload,
+        cursorApiKey,
+        cursorModel
+    })
+
+    await sendRunnerCallback(input.payload, {
+        status: "running",
+        metadata: {
+            notes: ["Cursor cloud run created for ADD job execution."],
+            cursorAgentId: createdRun.agentId,
+            cursorRunId: createdRun.runId,
+            cursorAgentUrl: createdRun.agentUrl,
+            cursorModel,
+            executionMode: input.executionMode
+        }
+    })
+
+    const cursorRun = await waitForCursorRun({
+        agentId: createdRun.agentId,
+        runId: createdRun.runId,
+        cursorApiKey
+    })
+
+    const commitSha =
+        (await getRefSha({
+            repository: input.payload.repository,
+            ref: input.payload.branchName,
+            token: input.token
+        })) ?? null
+
+    const matchedBranch =
+        cursorRun.git?.branches?.find(
+            branch => branch.branch === input.payload.branchName
+        ) ?? cursorRun.git?.branches?.[0]
+
+    if (cursorRun.status === "FINISHED") {
+        await sendRunnerCallback(input.payload, {
+            status: "completed",
+            metadata: {
+                notes: ["Cursor cloud runner completed ADD job execution."],
+                cursorAgentId: createdRun.agentId,
+                cursorRunId: createdRun.runId,
+                cursorAgentUrl: createdRun.agentUrl,
+                cursorModel,
+                cursorRunStatus: cursorRun.status,
+                cursorResult: cursorRun.result ?? null,
+                cursorDurationMs: cursorRun.durationMs ?? null,
+                commitSha,
+                pushedBranch: matchedBranch?.branch ?? null,
+                pushedPrUrl: matchedBranch?.prUrl ?? null,
+                durationMs: Date.now() - input.startedAt,
+                executionMode: input.executionMode
+            }
+        })
+
+        return {
+            ok: true,
+            commitSha: commitSha ?? undefined,
+            runId: createdRun.runId
+        }
+    }
+
+    await sendRunnerCallback(input.payload, {
+        status: "failed",
+        errorMessage: `Cursor run ended with status ${cursorRun.status ?? "unknown"}.`,
+        metadata: {
+            notes: ["Cursor cloud runner did not finish successfully."],
+            cursorAgentId: createdRun.agentId,
+            cursorRunId: createdRun.runId,
+            cursorAgentUrl: createdRun.agentUrl,
+            cursorModel,
+            cursorRunStatus: cursorRun.status ?? null,
+            cursorResult: cursorRun.result ?? null,
+            cursorDurationMs: cursorRun.durationMs ?? null,
+            commitSha,
+            pushedBranch: matchedBranch?.branch ?? null,
+            pushedPrUrl: matchedBranch?.prUrl ?? null,
+            durationMs: Date.now() - input.startedAt,
+            executionMode: input.executionMode
+        }
+    })
+
+    return { ok: false }
 }
 
 export const addExecuteJobTask = task({
@@ -272,10 +628,7 @@ export const addExecuteJobTask = task({
             return { ok: false }
         }
 
-        const executionMode =
-            payload.executionMode?.trim() ||
-            process.env.ADD_TRIGGER_EXECUTION_MODE?.trim() ||
-            "noop"
+        const executionMode = getExecutionMode(payload)
 
         if (executionMode === "noop") {
             await sendRunnerCallback(payload, {
@@ -293,13 +646,13 @@ export const addExecuteJobTask = task({
             return { ok: true }
         }
 
-        if (executionMode !== "repo-write") {
+        if (!isSupportedExecutionMode(executionMode)) {
             await sendRunnerCallback(payload, {
                 status: "blocked",
                 errorMessage: `Unsupported execution mode: ${executionMode}.`,
                 metadata: {
                     notes: [
-                        "Use ADD_TRIGGER_EXECUTION_MODE=noop or ADD_TRIGGER_EXECUTION_MODE=repo-write."
+                        "Use ADD_TRIGGER_EXECUTION_MODE=noop, repo-write, or cursor-cloud."
                     ]
                 }
             })
@@ -330,21 +683,20 @@ export const addExecuteJobTask = task({
                 token
             })
 
-            const commitSha = await commitRunArtifact({ payload, token })
-
-            await sendRunnerCallback(payload, {
-                status: "completed",
-                metadata: {
-                    notes: [
-                        "Runner committed ADD execution artifact to repository branch."
-                    ],
-                    commitSha,
-                    durationMs: Date.now() - startedAt,
+            if (executionMode === "cursor-cloud")
+                return await executeCursorCloudMode({
+                    payload,
+                    token,
+                    startedAt,
                     executionMode
-                }
-            })
+                })
 
-            return { ok: true, commitSha }
+            return await executeRepoWriteMode({
+                payload,
+                token,
+                startedAt,
+                executionMode
+            })
         } catch (error) {
             await sendRunnerCallback(payload, {
                 status: "failed",

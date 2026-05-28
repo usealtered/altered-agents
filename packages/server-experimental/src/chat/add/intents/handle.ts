@@ -14,6 +14,7 @@ import {
     updateAddPlanRepositoryPath,
     updateAddPlanStatus
 } from "../plans/update-status"
+import { reconcileLatestRunningAddJobForThread } from "../runner/cursor-status"
 import { parseAddIntent } from "./parse"
 
 type HandleAddIntentInput = {
@@ -68,11 +69,28 @@ function formatJobStatusMessage(input: {
     status: string
     branchName: string
     errorMessage?: string | null
+    metadata?: Record<string, unknown> | null
 }): string {
+    const metadata =
+        input.metadata && typeof input.metadata === "object"
+            ? (input.metadata as {
+                  cursorAgentUrl?: string
+                  cursorRunStatus?: string
+                  commitSha?: string
+              })
+            : null
+
     return [
         `Job: ${input.id}`,
         `Status: ${input.status}`,
         `Branch: ${input.branchName}`,
+        metadata?.cursorRunStatus
+            ? `Cursor run status: ${metadata.cursorRunStatus}`
+            : "",
+        metadata?.commitSha ? `Commit: ${metadata.commitSha}` : "",
+        metadata?.cursorAgentUrl
+            ? `Cursor run: ${metadata.cursorAgentUrl}`
+            : "",
         input.errorMessage ? `Details: ${input.errorMessage}` : ""
     ]
         .filter(Boolean)
@@ -214,11 +232,19 @@ async function handleStatusIntent(
     context: AddIntentContext,
     jobId?: string
 ): Promise<string> {
+    await reconcileLatestRunningAddJobForThread(context.threadId)
+
     const job = await resolveJobForThread({ threadId: context.threadId, jobId })
 
     if (!job) return "No job found for this thread."
 
-    return formatJobStatusMessage(job)
+    return formatJobStatusMessage({
+        id: job.id,
+        status: job.status,
+        branchName: job.branchName,
+        errorMessage: job.errorMessage,
+        metadata: job.metadata as Record<string, unknown> | null
+    })
 }
 
 async function handleStopIntent(
@@ -274,13 +300,13 @@ async function handleCostIntent(context: AddIntentContext): Promise<string> {
 
 function handleHealthIntent(): string {
     const mode =
-        process.env.ADD_USE_LOCAL_TEST_RUNNER === "1"
-            ? "local-test"
-            : "trigger-dev"
+        process.env.ADD_USE_LOCAL_TEST_RUNNER === "1" ? "local-test" : "remote"
+    const backend = process.env.ADD_RUNNER_BACKEND?.trim() || "cursor-direct"
 
     return [
         "ADD health:",
         `- runner mode: ${mode}`,
+        `- runner backend: ${backend}`,
         `- target repo: ${process.env.ADD_TARGET_GITHUB_REPOSITORY ?? "unset"}`,
         `- trigger task id configured: ${process.env.ADD_TRIGGER_TASK_ID ? "yes" : "no"}`,
         `- trigger key configured: ${process.env.TRIGGER_SECRET_KEY || process.env.ADD_TRIGGER_SECRET_KEY ? "yes" : "no"}`,
@@ -300,6 +326,9 @@ async function handleAddIntent(
         threadId: input.threadId,
         conversationId: input.conversationId
     }
+
+    if (intent.kind !== "status")
+        await reconcileLatestRunningAddJobForThread(context.threadId)
 
     if (intent.kind === "plan")
         return await handlePlanIntent(intent.request, context)

@@ -11,6 +11,7 @@
         "agents:sync": "node ./scripts/agents/sync-main.mjs",
         "agents:preflight": "node ./scripts/agents/preflight.mjs",
         "agents:trigger:deploy": "pnpm dlx trigger.dev@latest deploy --config ./trigger.config.ts",
+        "agents:inspect": "pnpm dlx dotenv-cli -e .env.agents -- pnpm exec tsx scripts/agents/inspect-job.ts",
 
         "check:types": "turbo check:types",
         "check:style": "ultracite check",

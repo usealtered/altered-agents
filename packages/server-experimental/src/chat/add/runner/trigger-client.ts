@@ -39,6 +39,17 @@ function getRunnerGitHubToken(): string | undefined {
     return process.env.ADD_RUNNER_GITHUB_TOKEN?.trim()
 }
 
+function getRunnerCursorApiKey(): string | undefined {
+    return (
+        process.env.ADD_CURSOR_API_KEY?.trim() ||
+        process.env.CURSOR_API_KEY?.trim()
+    )
+}
+
+function getRunnerCursorModel(): string | undefined {
+    return process.env.ADD_CURSOR_MODEL?.trim()
+}
+
 const triggerClientRunner: AddRunner = {
     async execute(input: AddRunnerExecutionInput) {
         const taskId = getTriggerTaskId()
@@ -112,7 +123,9 @@ const triggerClientRunner: AddRunner = {
                             callbackUrl,
                             callbackSecret,
                             executionMode: getExecutionMode(),
-                            githubToken: getRunnerGitHubToken()
+                            githubToken: getRunnerGitHubToken(),
+                            cursorApiKey: getRunnerCursorApiKey(),
+                            cursorModel: getRunnerCursorModel()
                         },
                         options: {
                             idempotencyKey: `add-job-${input.jobId}`,

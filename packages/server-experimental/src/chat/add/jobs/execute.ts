@@ -1,8 +1,17 @@
 import { getAddPlanById } from "../plans/get"
+import { cursorDirectRunner } from "../runner/cursor-direct"
 import { isLocalRunnerEnabled, localTestRunner } from "../runner/local-test"
 import { triggerClientRunner } from "../runner/trigger-client"
 import { getAddJobById } from "./get"
 import { updateAddJobStatus } from "./update"
+
+function isCursorDirectRunnerEnabled(): boolean {
+    const backend = process.env.ADD_RUNNER_BACKEND?.trim()
+    if (backend === "trigger") return false
+    if (backend === "cursor-direct") return true
+
+    return true
+}
 
 async function executeAddJob(jobId: string): Promise<void> {
     const job = await getAddJobById(jobId)
@@ -19,9 +28,10 @@ async function executeAddJob(jobId: string): Promise<void> {
         startedAt: new Date()
     })
 
-    const activeRunner = isLocalRunnerEnabled()
-        ? localTestRunner
-        : triggerClientRunner
+    let activeRunner = triggerClientRunner
+
+    if (isLocalRunnerEnabled()) activeRunner = localTestRunner
+    else if (isCursorDirectRunnerEnabled()) activeRunner = cursorDirectRunner
 
     const result = await activeRunner.execute({
         jobId: job.id,
