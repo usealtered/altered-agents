@@ -31,6 +31,14 @@ function getRunnerCallbackSecret(): string | undefined {
     return process.env.ADD_RUNNER_CALLBACK_SECRET?.trim()
 }
 
+function getExecutionMode(): string | undefined {
+    return process.env.ADD_TRIGGER_EXECUTION_MODE?.trim()
+}
+
+function getRunnerGitHubToken(): string | undefined {
+    return process.env.ADD_RUNNER_GITHUB_TOKEN?.trim()
+}
+
 const triggerClientRunner: AddRunner = {
     async execute(input: AddRunnerExecutionInput) {
         const taskId = getTriggerTaskId()
@@ -102,7 +110,9 @@ const triggerClientRunner: AddRunner = {
                             repository,
                             syncFrom: "main",
                             callbackUrl,
-                            callbackSecret
+                            callbackSecret,
+                            executionMode: getExecutionMode(),
+                            githubToken: getRunnerGitHubToken()
                         },
                         options: {
                             idempotencyKey: `add-job-${input.jobId}`,
