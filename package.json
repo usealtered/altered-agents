@@ -10,6 +10,7 @@
         "dev:experimental": "turbo dev --filter=*experimental",
         "agents:sync": "node ./scripts/agents/sync-main.mjs",
         "agents:preflight": "node ./scripts/agents/preflight.mjs",
+        "agents:e2e:trigger": "pnpm exec tsx ./scripts/agents/e2e-trigger-execution.ts",
         "agents:trigger:deploy": "pnpm dlx trigger.dev@latest deploy --config ./trigger.config.ts",
 
         "check:types": "turbo check:types",
@@ -30,6 +31,7 @@
     "devDependencies": {
         "@biomejs/biome": "^2.4.13",
         "@trigger.dev/sdk": "catalog:",
+        "tsx": "catalog:",
         "turbo": "^2.9.6",
         "ultracite": "^7.6.1"
     },

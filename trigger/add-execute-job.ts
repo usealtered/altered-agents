@@ -1,4 +1,5 @@
 import { task } from "@trigger.dev/sdk"
+import { resolveExecutionMode } from "./lib/execution-mode"
 
 type AddRunnerStatus =
     | "running"
@@ -272,12 +273,12 @@ export const addExecuteJobTask = task({
             return { ok: false }
         }
 
-        const executionMode =
-            payload.executionMode?.trim() ||
-            process.env.ADD_TRIGGER_EXECUTION_MODE?.trim() ||
-            "noop"
+        const executionMode = resolveExecutionMode({
+            payloadMode: payload.executionMode,
+            envMode: process.env.ADD_TRIGGER_EXECUTION_MODE
+        })
 
-        if (executionMode === "noop") {
+        if (executionMode.kind === "noop") {
             await sendRunnerCallback(payload, {
                 status: "completed",
                 metadata: {
@@ -293,10 +294,10 @@ export const addExecuteJobTask = task({
             return { ok: true }
         }
 
-        if (executionMode !== "repo-write") {
+        if (executionMode.kind === "unsupported") {
             await sendRunnerCallback(payload, {
                 status: "blocked",
-                errorMessage: `Unsupported execution mode: ${executionMode}.`,
+                errorMessage: `Unsupported execution mode: ${executionMode.mode}.`,
                 metadata: {
                     notes: [
                         "Use ADD_TRIGGER_EXECUTION_MODE=noop or ADD_TRIGGER_EXECUTION_MODE=repo-write."
@@ -340,7 +341,7 @@ export const addExecuteJobTask = task({
                     ],
                     commitSha,
                     durationMs: Date.now() - startedAt,
-                    executionMode
+                    executionMode: executionMode.kind
                 }
             })
 
@@ -355,7 +356,7 @@ export const addExecuteJobTask = task({
                 metadata: {
                     notes: ["Repository execution failed in Trigger task."],
                     durationMs: Date.now() - startedAt,
-                    executionMode
+                    executionMode: executionMode.kind
                 }
             })
 
