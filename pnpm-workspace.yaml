@@ -9,6 +9,7 @@ catalog:
   "@hono/node-server": ^2.0.1
   "@types/node": ^25.6.0
   "@types/pg": ^8.20.0
+  "@trigger.dev/sdk": ^4.4.6
   "@vercel/functions": ^3.5.0
   ai: ^6.0.174
   arktype: ^2.2.0
