@@ -1,0 +1,32 @@
+{
+    "$schema": "https://json.schemastore.org/tsconfig",
+
+    "compilerOptions": {
+        "target": "esnext",
+        "module": "esnext",
+        "moduleResolution": "bundler",
+        "moduleDetection": "force",
+        "esModuleInterop": true,
+        "resolveJsonModule": true,
+        "isolatedModules": true,
+        "skipLibCheck": true,
+        "strict": true,
+        "strictNullChecks": true,
+        "noUncheckedIndexedAccess": true,
+        "forceConsistentCasingInFileNames": true,
+        "incremental": true,
+        "tsBuildInfoFile": "${configDir}/.cache/ts-build-info.json",
+        "noEmit": true,
+        "types": ["node"],
+        "rootDir": "${configDir}",
+        "outDir": "${configDir}/dist"
+    },
+
+    "include": ["${configDir}/**/*.ts"],
+    "exclude": [
+        "${configDir}/dist/**",
+        "${configDir}/node_modules/**",
+        "${configDir}/.cache/**",
+        "${configDir}/.turbo/**"
+    ]
+}

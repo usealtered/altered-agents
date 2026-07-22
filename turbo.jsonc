@@ -1,0 +1,62 @@
+{
+    "$schema": "https://turborepo.com/schema.json",
+    "ui": "tui",
+
+    "globalDependencies": ["packages/tooling/src/typescript/config/*.json"],
+
+    "tasks": {
+        "//#tunnel": {
+            "persistent": true,
+            "cache": false
+        },
+
+        "dev": {
+            "dependsOn": ["^build"],
+            "persistent": true,
+            "cache": false,
+            "with": ["//#tunnel", "view:db"]
+        },
+
+        "check:types": {
+            "dependsOn": ["^check:types"]
+        },
+        "//#check:style": {},
+        "//#fix:style": {
+            "cache": false
+        },
+
+        "push:db": {
+            "cache": false,
+            "interactive": true
+        },
+        "view:db": {
+            "persistent": true,
+            "cache": false
+        },
+
+        "clean": {
+            "cache": false
+        },
+
+        "build": {
+            "dependsOn": ["^build"],
+            "inputs": ["$TURBO_DEFAULT$"],
+            "outputs": ["dist/**", ".next/**", "!.next/cache/**"],
+
+            /**
+             * @todo P3: Once Effect Config is implemented, revisit environment variable caching. We should only need to specify variables in either the consuming application or the first-built package - not all of them. Currently, all packages require all environment variable definitions.
+             *
+             * @see https://turborepo.dev/docs/crafting-your-repository/using-environment-variables#environment-variables-from-dependencies
+             */
+            "env": ["SHARED_*"]
+        }
+    },
+
+    "globalPassThroughEnv": [
+        "VERCEL",
+        "VERCEL_ENV",
+        "VERCEL_URL",
+        "VERCEL_BRANCH_URL",
+        "VERCEL_PROJECT_PRODUCTION_URL"
+    ]
+}

@@ -1,0 +1,32 @@
+{
+    "name": "@altered/tooling",
+    "version": "0.1.0",
+    "private": true,
+    "type": "module",
+    "bin": {
+        "altered-bundle-application": "./bin/bundle-application.ts",
+
+        "altered-clean-package": "./bin/clean-package.ts"
+    },
+    "exports": {
+        "./*": {
+            "types": "./src/*.ts",
+            "import": "./src/*.ts"
+        },
+
+        "./typescript/config/*.json": "./src/typescript/config/*.json"
+    },
+    "scripts": {
+        "check:types": "tsc",
+
+        "clean": "altered-clean-package"
+    },
+    "dependencies": {
+        "esbuild": "catalog:"
+    },
+    "devDependencies": {
+        "@types/node": "catalog:",
+        "tsx": "catalog:",
+        "typescript": "catalog:"
+    }
+}
